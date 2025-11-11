@@ -1,0 +1,68 @@
+﻿<Window x:Class="TVideo.SetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TVideo"
+        mc:Ignorable="d"
+        Title="Setup"
+        WindowStartupLocation="CenterOwner"
+        MinHeight="400"
+        Height="450"
+        MinWidth="600"
+        Width="800">
+    <Grid>
+        <ListView ItemsSource="{Binding Streams}" HorizontalContentAlignment="Stretch">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <CheckBox VerticalAlignment="Center"
+                                  Margin="8,8,4,0"
+                                  IsChecked="{Binding Convert, Mode=TwoWay}" />
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <StackPanel.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="18" />
+                                    <Setter Property="FontWeight" Value="DemiBold" />
+                                    <Setter Property="Margin" Value="8,8,0,4" />
+                                </Style>
+                            </StackPanel.Resources>
+                            <TextBlock Text="{Binding Index}" />
+                            <TextBlock Text="{Binding Tags}" />
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="1"
+                                    Grid.Row="1"
+                                    Orientation="Horizontal">
+                            <StackPanel.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="12" />
+                                    <Setter Property="Margin" Value="8,0,0,8" />
+                                </Style>
+                            </StackPanel.Resources>
+                            <TextBlock Text="{Binding CodecType}" />
+                            <TextBlock Text="{Binding CodecName}" />
+                        </StackPanel>
+
+                        <Button Grid.Column="2"
+                                Grid.RowSpan="2"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                Visibility="Collapsed" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Window>
