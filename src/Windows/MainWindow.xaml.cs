@@ -24,7 +24,6 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFileDialog
         {
-            // InitialDirectory = Environment.CurrentDirectory;
             Filter = "MKV (*.mkv)|*.mkv",
             Multiselect = false
         };
@@ -40,7 +39,6 @@ public partial class MainWindow : Window
     {
         var dialogLoad = new OpenFileDialog
         {
-            // InitialDirectory = Environment.CurrentDirectory;
             Filter = "MKV (*.mkv)|*.mkv",
             Multiselect = false,
         };
@@ -75,9 +73,9 @@ public partial class MainWindow : Window
         };
     }
 
-    private void GetMediaInfo(string selectedFileName)
+    private ProbeResult? GetMediaInfo(string selectedFileName)
     {
-        var args = @$"-v error -select_streams a -show_entries stream=index,codec_name,codec_type,codec_tag_string,channels,channel_layout:stream_tags=language,title -of json ""{selectedFileName}""";
+        var args = @$"-v error -show_entries format=duration:stream=index,codec_type,codec_name,channels:stream_tags=language,title -of json ""{selectedFileName}""";
 
         using var process = new Process
         {
@@ -92,16 +90,18 @@ public partial class MainWindow : Window
         _processes.Remove(process);
 
         var output = process.StandardOutput.ReadToEnd();
-        var result = JsonSerializer.Deserialize<FFProbeResult>(output);
+        var result = JsonSerializer.Deserialize<ProbeResult>(output);
         if (result == null)
         {
             MessageBox.Show("Failed");
-            return;
+            return null;
         }
 
         var source = result.Streams.Select(x => new SetupContext { Info = x }).ToArray();
         var setup = new SetupWindow(source);
         setup.ShowDialog();
+
+        return result;
     }
 
     private void Convert(string selectedFileName, string? outputDirectory = null)
@@ -121,6 +121,14 @@ public partial class MainWindow : Window
         args.Append(@$"""{newFileName}""");
 
         var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffmpeg.exe", args.ToString());
+
+        var mediaInfo = GetMediaInfo(selectedFileName);
+
+        if (mediaInfo?.Format != null && double.TryParse(mediaInfo.Format.Duration, NumberStyles.Any, CultureInfo.InvariantCulture, out var duration))
+        {
+            ProcessProgressBar.Value = 0;
+            ProcessProgressBar.Maximum = duration;
+        }
 
         Task.Run(() => RunAsync(startInfo));
     }
@@ -144,12 +152,14 @@ public partial class MainWindow : Window
 
             var timeValue = message.Substring(start, end - start).Trim();
 
-            var parsed = TimeSpan.TryParseExact(timeValue, @"hh\:mm\:ss\.ff", CultureInfo.InvariantCulture, out TimeSpan time);
-
-            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            if (TimeSpan.TryParseExact(timeValue, @"hh\:mm\:ss\.ff", CultureInfo.InvariantCulture, out TimeSpan time))
             {
-                InfoTextBlock.Text = (parsed ? time.TotalSeconds : "???") + " seconds completed";
-            }));
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    InfoTextBlock.Text = message;
+                    ProcessProgressBar.Value = time.TotalSeconds;
+                }));
+            }
         }
     }
 

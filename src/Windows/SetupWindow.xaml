@@ -28,40 +28,33 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="50" />
+                            <ColumnDefinition Width="50" />
                         </Grid.ColumnDefinitions>
 
-                        <CheckBox VerticalAlignment="Center"
-                                  Margin="8,4,4,0"
-                                  IsChecked="{Binding Convert, Mode=TwoWay}" />
-
-                        <Rectangle Grid.Column="1"
-                                   HorizontalAlignment="Left"
+                        <Rectangle HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
                                    Height="2"
                                    Width="{Binding ActualWidth, ElementName=TitleStackPanel, Mode=OneWay}"
                                    Fill="Black"
-                                   Margin="8,8,0,0" />
+                                   Margin="8,8,0,0"
+                                   Visibility="{Binding IsChecked, ElementName=RemoveButton, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                         <StackPanel x:Name="TitleStackPanel"
-                                    Grid.Column="1"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Left">
                             <StackPanel.Resources>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="FontSize" Value="18" />
-                                    <Setter Property="FontWeight" Value="DemiBold" />
-                                    <Setter Property="Margin" Value="8,2,0,0" />
+                                    <Setter Property="FontWeight" Value="Medium" />
                                 </Style>
                             </StackPanel.Resources>
-                            <TextBlock Text="{Binding Info.Index}" />
-                            <TextBlock Text="{Binding Info.Tags}" />
+                            <TextBlock Text="{Binding Info.Index}" Margin="8,0,0,0" />
+                            <TextBlock Text="{Binding}" Margin="20,0,0,0" />
                         </StackPanel>
                         
-                        <StackPanel Grid.Column="1"
-                                    Grid.Row="1"
+                        <StackPanel Grid.Row="1"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Left">
                             <StackPanel.Resources>
@@ -74,20 +67,32 @@
                             <TextBlock Text="{Binding Info.CodecName}" />
                         </StackPanel>
 
-                        <ToggleButton Grid.Column="2"
+                        <ToggleButton Grid.Column="1"
                                       Grid.RowSpan="2"
-                                      Margin="8,0"
-                                      Padding="5"
+                                      Margin="4"
+                                      Padding="2"
                                       Background="Transparent"
-                                      BorderThickness="0"
-                                      HorizontalContentAlignment="Stretch"
-                                      VerticalContentAlignment="Stretch"
-                                      VerticalAlignment="Center"
+                                      BorderThickness="1"
+                                      Visibility="{Binding IsAudio, Converter={StaticResource BoolToVisibilityConverter}}"
+                                      IsChecked="{Binding Convert, Mode=TwoWay}">
+                            <TextBlock Text="ac3"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </ToggleButton>
+
+                        <ToggleButton x:Name="RemoveButton"
+                                      Grid.Column="2"
+                                      Grid.RowSpan="2"
+                                      Margin="4"
+                                      Padding="2"
+                                      Background="Transparent"
+                                      BorderThickness="1"
+                                      Visibility="{Binding CanRemove, Converter={StaticResource BoolToVisibilityConverter}}"
                                       Checked="ToggleButton_Checked"
                                       Unchecked="ToggleButton_Checked">
                             <Path Data="M0,0 L16,16 M16,0 L0,16"
                                   Stroke="Red"
-                                  StrokeThickness="2"
+                                  StrokeThickness="1"
                                   Width="16"
                                   Height="16"/>
                         </ToggleButton>
