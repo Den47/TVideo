@@ -1,0 +1,99 @@
+﻿<Window x:Class="TVideo.Windows.SetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TVideo"
+        xmlns:classes="clr-namespace:TVideo.Windows.Classes"
+        mc:Ignorable="d"
+        Title="Setup"
+        WindowStartupLocation="CenterScreen"
+        MinHeight="400"
+        Height="450"
+        MinWidth="600"
+        Width="800">
+    <Grid>
+        <ListView ItemsSource="{Binding SetupContexts}"
+                  HorizontalContentAlignment="Stretch">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Focusable" Value="False"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate DataType="{x:Type classes:SetupContext}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <CheckBox VerticalAlignment="Center"
+                                  Margin="8,4,4,0"
+                                  IsChecked="{Binding Convert, Mode=TwoWay}" />
+
+                        <Rectangle Grid.Column="1"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Center"
+                                   Height="2"
+                                   Width="{Binding ActualWidth, ElementName=TitleStackPanel, Mode=OneWay}"
+                                   Fill="Black"
+                                   Margin="8,8,0,0" />
+
+                        <StackPanel x:Name="TitleStackPanel"
+                                    Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Left">
+                            <StackPanel.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="18" />
+                                    <Setter Property="FontWeight" Value="DemiBold" />
+                                    <Setter Property="Margin" Value="8,2,0,0" />
+                                </Style>
+                            </StackPanel.Resources>
+                            <TextBlock Text="{Binding Info.Index}" />
+                            <TextBlock Text="{Binding Info.Tags}" />
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="1"
+                                    Grid.Row="1"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Left">
+                            <StackPanel.Resources>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="12" />
+                                    <Setter Property="Margin" Value="8,0,0,4" />
+                                </Style>
+                            </StackPanel.Resources>
+                            <TextBlock Text="{Binding Info.CodecType}" />
+                            <TextBlock Text="{Binding Info.CodecName}" />
+                        </StackPanel>
+
+                        <ToggleButton Grid.Column="2"
+                                      Grid.RowSpan="2"
+                                      Margin="8,0"
+                                      Padding="5"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      HorizontalContentAlignment="Stretch"
+                                      VerticalContentAlignment="Stretch"
+                                      VerticalAlignment="Center"
+                                      Checked="ToggleButton_Checked"
+                                      Unchecked="ToggleButton_Checked">
+                            <Path Data="M0,0 L16,16 M16,0 L0,16"
+                                  Stroke="Red"
+                                  StrokeThickness="2"
+                                  Width="16"
+                                  Height="16"/>
+                        </ToggleButton>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Window>

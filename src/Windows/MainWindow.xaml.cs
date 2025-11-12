@@ -1,13 +1,15 @@
 ﻿using Microsoft.Win32;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
-using TVideo.Info;
+using TVideo.FF;
+using TVideo.Windows.Classes;
 
-namespace TVideo;
+namespace TVideo.Windows;
 
 public partial class MainWindow : Window
 {
@@ -97,7 +99,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        var setup = new SetupWindow(result);
+        var source = result.Streams.Select(x => new SetupContext { Info = x }).ToArray();
+        var setup = new SetupWindow(source);
         setup.ShowDialog();
     }
 
@@ -122,12 +125,32 @@ public partial class MainWindow : Window
         Task.Run(() => RunAsync(startInfo));
     }
 
-    private static void HanleMessage(object sender, DataReceivedEventArgs eventArgs)
+    private void HanleMessage(object sender, DataReceivedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(eventArgs.Data))
+        if (string.IsNullOrWhiteSpace(e.Data))
             return;
 
-        Debug.WriteLine(eventArgs.Data);
+        var message = e.Data;
+        Debug.WriteLine(e.Data);
+
+        int start = message.IndexOf("time=");
+        if (start != -1)
+        {
+            start += "time=".Length;
+            var end = start;
+
+            while (end < message.Length && !char.IsWhiteSpace(message[end]))
+                end++;
+
+            var timeValue = message.Substring(start, end - start).Trim();
+
+            var parsed = TimeSpan.TryParseExact(timeValue, @"hh\:mm\:ss\.ff", CultureInfo.InvariantCulture, out TimeSpan time);
+
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                InfoTextBlock.Text = (parsed ? time.TotalSeconds : "???") + " seconds completed";
+            }));
+        }
     }
 
     private async Task RunAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)

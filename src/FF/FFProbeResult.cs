@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace TVideo.Info;
+namespace TVideo.FF;
 
 public class FFProbeResult
 {

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace TVideo.Info;
+namespace TVideo.FF;
 
 public class StreamInfo
 {
@@ -21,8 +21,4 @@ public class StreamInfo
 
     [JsonPropertyName("tags")]
     public required StreamTags Tags { get; set; }
-
-    internal bool Convert { get; set; }
-
-    internal bool Remove { get; set; }
 }
