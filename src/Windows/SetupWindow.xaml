@@ -13,8 +13,14 @@
         MinWidth="600"
         Width="800">
     <Grid>
-        <ListView ItemsSource="{Binding SetupContexts}"
-                  HorizontalContentAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ListView ItemsSource="{Binding Contexts}"
+                  HorizontalContentAlignment="Stretch"
+                  VerticalAlignment="Stretch">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="Focusable" Value="False"/>
@@ -51,7 +57,7 @@
                                 </Style>
                             </StackPanel.Resources>
                             <TextBlock Text="{Binding Info.Index}" Margin="8,0,0,0" />
-                            <TextBlock Text="{Binding}" Margin="20,0,0,0" />
+                            <TextBlock Text="{Binding}" Margin="14,0,0,0" />
                         </StackPanel>
                         
                         <StackPanel Grid.Row="1"
@@ -100,5 +106,21 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="10">
+            <CheckBox VerticalAlignment="Center"
+                      FontSize="16"
+                      IsChecked="{Binding ApplyToAll, Mode=TwoWay}"
+                      Content="Apply to all" />
+            <Button Content="Run"
+                    Margin="20,0,0,0"
+                    Height="40"
+                    Width="80"
+                    FontSize="16"
+                    Click="RunButton_Click" />
+        </StackPanel>
     </Grid>
 </Window>

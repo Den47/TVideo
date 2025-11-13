@@ -6,10 +6,10 @@ namespace TVideo.Windows;
 
 public partial class SetupWindow : Window
 {
-    public SetupWindow(IReadOnlyCollection<SetupContext> source)
+    public SetupWindow(Setup setup)
     {
-        DataContext = this;
-        SetupContexts = source;
+        DataContext = setup;
+        SetupContexts = setup.Contexts;
 
         InitializeComponent();
     }
@@ -21,5 +21,11 @@ public partial class SetupWindow : Window
         var button = (ToggleButton)sender;
         var setupContext = (SetupContext)button.DataContext;
         setupContext.Remove = button.IsChecked.GetValueOrDefault();
+    }
+
+    private void RunButton_Click(object sender, RoutedEventArgs e)
+    {
+        DialogResult = true;
+        Close();
     }
 }

@@ -4,19 +4,24 @@ namespace TVideo.Windows.Classes;
 
 public class SetupContext
 {
-    public required ProbeStream Info { get; init; }
+    public SetupContext()
+    {
+        Convert = IsAudio;
+    }
 
-    public bool Convert { get; set; } = true;
+    public ProbeStream? Info { get; init; }
+
+    public bool Convert { get; set; }
 
     public bool Remove { get; set; }
 
-    public bool IsAudio => string.Equals(Info.CodecType, "audio", StringComparison.OrdinalIgnoreCase);
+    public bool IsAudio => string.Equals(Info?.CodecType, "audio", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsVideo => string.Equals(Info.CodecType, "video", StringComparison.OrdinalIgnoreCase);
+    public bool IsVideo => string.Equals(Info?.CodecType, "video", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsSubtitle => string.Equals(Info.CodecType, "subtitle", StringComparison.OrdinalIgnoreCase);
+    public bool IsSubtitle => string.Equals(Info?.CodecType, "subtitle", StringComparison.OrdinalIgnoreCase);
 
-    public bool CanRemove => IsAudio || IsSubtitle;
+    public bool CanRemove => !IsVideo;
 
     public override string ToString()
     {

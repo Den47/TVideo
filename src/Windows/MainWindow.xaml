@@ -14,9 +14,9 @@
         Closing="Window_Closing">
     <Window.Resources>
         <Style x:Key="ControlButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="124" />
-            <Setter Property="Width" Value="124" />
-            <Setter Property="Margin" Value="10" />
+            <Setter Property="Height" Value="100" />
+            <Setter Property="Width" Value="100" />
+            <Setter Property="Margin" Value="10,10,0,10" />
         </Style>
     </Window.Resources>
     <Grid>
@@ -27,21 +27,42 @@
         </Grid.RowDefinitions>
 
         <StackPanel Orientation="Horizontal">
-            <Button Style="{StaticResource ControlButtonStyle}"
-                    Content="Select (info)"
-                    Click="Button1_Click" />
+            <Button Style="{StaticResource ControlButtonStyle}" Click="ConvertButton_Click">
+                <TextBlock TextAlignment="Center" FontSize="16">
+                    Select
+                    <LineBreak />
+                    file
+                </TextBlock>
+            </Button>
 
-            <Button Style="{StaticResource ControlButtonStyle}"
-                    Content="Select (convert)"
-                    Click="Button2_Click" />
+            <Button Style="{StaticResource ControlButtonStyle}" Click="ConvertButton_Click">
+                <TextBlock TextAlignment="Center" FontSize="16">
+                    Select
+                    <LineBreak />
+                    folder
+                </TextBlock>
+            </Button>
+
+            <Button Style="{StaticResource ControlButtonStyle}" Click="MediaButton_Click">
+                <TextBlock TextAlignment="Center" FontSize="16">
+                    Get
+                    <LineBreak />
+                    info
+                </TextBlock>
+            </Button>
         </StackPanel>
 
-        <TextBlock x:Name="InfoTextBlock"
-                   Grid.Row="1"
-                   HorizontalAlignment="Left"
-                   VerticalAlignment="Bottom"
-                   Margin="10"
-                   FontSize="16" />
+        <StackPanel Grid.Row="1"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom">
+            <TextBlock x:Name="ProgressTextBlock"
+                       Margin="10"
+                       FontSize="16" />
+            <TextBlock x:Name="OutputTextBlock"
+                       Margin="10,0,10,10"
+                       FontSize="16"
+                       Visibility="Collapsed" />
+        </StackPanel>
 
         <ProgressBar x:Name="ProcessProgressBar"
                      Grid.Row="2"
