@@ -8,9 +8,9 @@
         Title="TVideo"
         WindowStartupLocation="CenterScreen"
         MinHeight="400"
-        Height="450"
+        Height="400"
         MinWidth="600"
-        Width="800"
+        Width="600"
         Closing="Window_Closing">
     <Grid>
         <Grid.RowDefinitions>
@@ -19,7 +19,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Orientation="Horizontal">
+        <StackPanel x:Name="ControlPanel" Orientation="Horizontal">
             <StackPanel.Resources>
                 <Style TargetType="Button">
                     <Setter Property="Width" Value="145" />
@@ -42,17 +42,17 @@
                 </StackPanel>
             </Button>
 
-            <Button Click="ConvertFileButton_Click">
+            <Button Click="SelectFileButton_Click">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="/Images/file.png"/>
-                    <TextBlock VerticalAlignment="Center" Text="Select file" />
+                    <TextBlock VerticalAlignment="Center" Text="Convert file" />
                 </StackPanel>
             </Button>
 
-            <Button Click="ConvertFolderButton_Click">
+            <Button Click="SelectFolderButton_Click">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="/Images/folder.png"/>
-                    <TextBlock VerticalAlignment="Center" Text="Select folder" />
+                    <TextBlock VerticalAlignment="Center" Text="Convert files" />
                 </StackPanel>
             </Button>
         </StackPanel>
@@ -65,7 +65,7 @@
                        FontSize="16" />
             <TextBlock x:Name="OutputTextBlock"
                        Margin="10,0,10,10"
-                       FontSize="16"
+                       FontSize="12"
                        Visibility="Collapsed" />
         </StackPanel>
 

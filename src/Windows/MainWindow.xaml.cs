@@ -7,7 +7,6 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
-using System.Windows.Controls.Primitives;
 using TVideo.FF;
 using TVideo.Windows.Classes;
 
@@ -16,6 +15,8 @@ namespace TVideo.Windows;
 public partial class MainWindow : Window
 {
     private readonly List<Process> _processes = [];
+
+    private bool _applyToAll;
     private int _total;
     private int _successful;
     private int _failed;
@@ -25,10 +26,11 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
-    private void ConvertFileButton_Click(object sender, RoutedEventArgs e)
+    private void SelectFileButton_Click(object sender, RoutedEventArgs e)
     {
         var dialogLoad = new OpenFileDialog
         {
+            Title = "Select the file to convert",
             Filter = "MKV (*.mkv)|*.mkv",
             Multiselect = false,
         };
@@ -39,18 +41,21 @@ public partial class MainWindow : Window
 
         var dialogSave = new OpenFolderDialog
         {
+            Title = "Select a folder to save",
             Multiselect = false,
         };
 
-        var hasOutput = dialogSave.ShowDialog();
+        var output = dialogSave.ShowDialog() == true ? dialogSave.FolderName : null;
+        Restart(1);
 
-        Convert(dialogLoad.FileName, hasOutput == true ? dialogSave.FolderName : null);
+        _ = StartConvertationAsync([dialogLoad.FileName], output);
     }
 
-    private void ConvertFolderButton_Click(object sender, RoutedEventArgs e)
+    private void SelectFolderButton_Click(object sender, RoutedEventArgs e)
     {
         var dialogLoad = new OpenFolderDialog
         {
+            Title = "Select the folder with *.mkv files to convert",
             Multiselect = false,
         };
 
@@ -58,20 +63,26 @@ public partial class MainWindow : Window
         if (result != true)
             return;
 
+        var files = Directory.GetFiles(dialogLoad.FolderName, "*.mkv");
+        if (files.Length == 0)
+        {
+            MessageBox.Show("No *.mkv files found!");
+            return;
+        }
+
         var dialogSave = new OpenFolderDialog
         {
+            Title = "Select a folder to save",
             Multiselect = false,
         };
 
-        var hasOutput = dialogSave.ShowDialog();
+        var output = dialogSave.ShowDialog() == true ? dialogSave.FolderName : null;
+        Restart(files.Length);
 
-        foreach (var process in _processes)
-        {
-            //Convert(dialogLoad.FileName, hasOutput == true ? dialogSave.FolderName : null);
-        }
+        _ = StartConvertationAsync(files, output);
     }
 
-    private void MediaButton_Click(object sender, RoutedEventArgs e)
+    private async void MediaButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
@@ -83,7 +94,7 @@ public partial class MainWindow : Window
         if (result != true)
             return;
 
-        var probeResult = GetProbeResult(dialog.FileName);
+        var probeResult = await GetProbeResultAsync(dialog.FileName);
         if (probeResult != null)
             ShowSetupDialog(probeResult, canProcess: false);
     }
@@ -122,28 +133,16 @@ public partial class MainWindow : Window
         return setupWindow.DialogResult == true ? setup : null;
     }
 
-    private ProbeResult? GetProbeResult(string selectedFileName)
+    private async Task<ProbeResult?> GetProbeResultAsync(string selectedFileName, CancellationToken cancellationToken = default)
     {
         var args = @$"-v error -show_entries format=duration:stream=index,codec_type,codec_name,channels:stream_tags=language,title -of json ""{selectedFileName}""";
 
-        using var process = new Process
-        {
-            StartInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffprobe.exe", args)
-        };
-
-        _processes.Add(process);
-
-        process.Start();
-        process.WaitForExit();
-
-        _processes.Remove(process);
-
-        var output = process.StandardOutput.ReadToEnd();
+        var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffprobe.exe", args);
+        var result = await RunProcessAsync(startInfo, handleOutput: false, cancellationToken);
 
         try
         {
-            var result = JsonSerializer.Deserialize<ProbeResult>(output);
-            return result;
+            return JsonSerializer.Deserialize<ProbeResult>(result.Output);
         }
         catch (Exception ex)
         {
@@ -152,7 +151,39 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Convert(string selectedFileName, string? outputDirectory = null)
+    private async Task StartConvertationAsync(string[] files, string? outputDirectory)
+    {
+        var hasResult = false;
+
+        foreach (var fileName in files)
+        {
+            var exitCode = await ConvertFileAsync(fileName, outputDirectory, multiSelect: files.Length > 1);
+            hasResult |= exitCode == 0;
+        }
+
+        await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (hasResult)
+            {
+                UpdateCounts();
+                OutputTextBlock.Text = "All processes finished!";
+                ProcessProgressBar.Value = ProcessProgressBar.Maximum;
+            }
+            else
+            {
+                ProgressTextBlock.Text = string.Empty;
+                OutputTextBlock.Visibility = Visibility.Collapsed;
+            }
+
+            ControlPanel.IsEnabled = true;
+        }));
+    }
+
+    private async Task<int?> ConvertFileAsync(
+        string selectedFileName,
+        string? outputDirectory = null,
+        bool multiSelect = false,
+        CancellationToken cancellationToken = default)
     {
         var directory = outputDirectory ?? Path.GetDirectoryName(selectedFileName)!;
         var fileName = Path.GetFileNameWithoutExtension(selectedFileName);
@@ -168,29 +199,58 @@ public partial class MainWindow : Window
         args.Append("-c:s copy ");
         args.Append(@$"""{newFileName}""");
 
-        var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffmpeg.exe", args.ToString());
+        var probeResult = await GetProbeResultAsync(selectedFileName, cancellationToken);
+        var cancel = false;
 
-        var probeResult = GetProbeResult(selectedFileName);
-        if (probeResult is null)
-            return;
-
-        var setup = ShowSetupDialog(probeResult);
-        if (setup is null)
-            return;
-
-        if (probeResult.Format is not null &&
-            double.TryParse(probeResult.Format.Duration, NumberStyles.Any, CultureInfo.InvariantCulture, out var duration))
+        await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
+            if (probeResult is null)
+            {
+                ControlPanel.IsEnabled = true;
+                cancel = true;
+                return;
+            }
+
+            if (!_applyToAll)
+            {
+                var setup = ShowSetupDialog(probeResult, multiSelect: multiSelect);
+                if (setup is null)
+                {
+                    ControlPanel.IsEnabled = true;
+                    cancel = true;
+                    return;
+                }
+
+                _applyToAll = setup.ApplyToAll;
+            }
+
             ProcessProgressBar.Value = 0;
-            ProcessProgressBar.Maximum = duration;
-        }
 
-        _total = 1;
-        _successful = 0;
-        _failed = 0;
-        UpdateCounts();
+            if (double.TryParse(probeResult.Format?.Duration, NumberStyles.Any, CultureInfo.InvariantCulture, out var duration))
+            {
+                ProcessProgressBar.Maximum = duration;
+            }
+        }));
 
-        Task.Run(() => RunAsync(startInfo));
+        if (cancel)
+            return null;
+
+        var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffmpeg.exe", args.ToString());
+        var result = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
+
+        await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (result.ExitCode == 0)
+                _successful++;
+            else
+                _failed++;
+
+            UpdateCounts();
+            OutputTextBlock.Text = "Process finished!";
+            ProcessProgressBar.Value = ProcessProgressBar.Maximum;
+        }));
+
+        return result.ExitCode;
     }
 
     private void HanleMessage(object sender, DataReceivedEventArgs e)
@@ -199,66 +259,66 @@ public partial class MainWindow : Window
             return;
 
         var message = e.Data;
+        var seconds = 0.0;
+
+        var start = message.IndexOf("time=");
+        if (start != -1)
+        {
+            start += "time=".Length;
+            var end = start;
+
+            while (end < message.Length && !char.IsWhiteSpace(message[end]))
+                end++;
+
+            var timeValue = message.Substring(start, end - start).Trim();
+
+            if (TimeSpan.TryParseExact(timeValue, @"hh\:mm\:ss\.ff", CultureInfo.InvariantCulture, out TimeSpan time))
+                seconds = time.TotalSeconds;
+        }
 
         Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
             OutputTextBlock.Text = message;
             OutputTextBlock.Visibility = message != null ? Visibility.Visible : Visibility.Collapsed;
-        }));
-
-        int start = message.IndexOf("time=");
-        if (start == -1)
-            return;
-
-        start += "time=".Length;
-        var end = start;
-
-        while (end < message.Length && !char.IsWhiteSpace(message[end]))
-            end++;
-
-        var timeValue = message.Substring(start, end - start).Trim();
-
-        if (!TimeSpan.TryParseExact(timeValue, @"hh\:mm\:ss\.ff", CultureInfo.InvariantCulture, out TimeSpan time))
-            return;
-
-        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-        {
-            ProcessProgressBar.Value = time.TotalSeconds;
+            ProcessProgressBar.Value = seconds > 0 ? seconds : ProcessProgressBar.Value;
         }));
     }
 
-    private async Task RunAsync(ProcessStartInfo convertProcessInfo, CancellationToken cancellationToken = default)
+    private async Task<(int ExitCode, string Output)> RunProcessAsync(ProcessStartInfo convertProcessInfo, bool handleOutput = false, CancellationToken cancellationToken = default)
     {
         using var process = new Process
         {
             StartInfo = convertProcessInfo
         };
 
-        process.OutputDataReceived += HanleMessage;
-        process.ErrorDataReceived += HanleMessage;
+        if (handleOutput)
+        {
+            process.OutputDataReceived += HanleMessage;
+            process.ErrorDataReceived += HanleMessage;
+        }
 
         _processes.Add(process);
 
         process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
+
+        if (handleOutput)
+        {
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+        }
 
         await process.WaitForExitAsync(cancellationToken);
 
         _processes.Remove(process);
 
-        await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+        if (handleOutput)
         {
-            OutputTextBlock.Text = "All processes finished!";
-            ProcessProgressBar.Value = ProcessProgressBar.Maximum;
+            process.OutputDataReceived -= HanleMessage;
+            process.ErrorDataReceived -= HanleMessage;
+        }
 
-            if (process.ExitCode == 0)
-                _successful++;
-            else
-                _failed++;
-
-            UpdateCounts();
-        }));
+        var output = handleOutput ? string.Empty : await process.StandardOutput.ReadToEndAsync(cancellationToken);
+        return (process.ExitCode, output);
     }
 
     private void Window_Closing(object sender, CancelEventArgs e)
@@ -289,6 +349,16 @@ public partial class MainWindow : Window
                 process.Dispose();
             }
         }
+    }
+
+    private void Restart(int total)
+    {
+        _applyToAll = false;
+        _total = total;
+        _successful = 0;
+        _failed = 0;
+        ControlPanel.IsEnabled = false;
+        UpdateCounts();
     }
 
     private void UpdateCounts()
