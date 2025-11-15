@@ -12,13 +12,6 @@
         MinWidth="600"
         Width="800"
         Closing="Window_Closing">
-    <Window.Resources>
-        <Style x:Key="ControlButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="100" />
-            <Setter Property="Width" Value="100" />
-            <Setter Property="Margin" Value="10,10,0,10" />
-        </Style>
-    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -27,28 +20,40 @@
         </Grid.RowDefinitions>
 
         <StackPanel Orientation="Horizontal">
-            <Button Style="{StaticResource ControlButtonStyle}" Click="ConvertButton_Click">
-                <TextBlock TextAlignment="Center" FontSize="16">
-                    Select
-                    <LineBreak />
-                    file
-                </TextBlock>
+            <StackPanel.Resources>
+                <Style TargetType="Button">
+                    <Setter Property="Width" Value="145" />
+                    <Setter Property="Margin" Value="10,10,0,10" />
+                    <Setter Property="FontSize" Value="14" />
+                    <Setter Property="HorizontalContentAlignment" Value="Left" />
+                </Style>
+                <Style TargetType="Image">
+                    <Setter Property="Height" Value="32" />
+                    <Setter Property="Width" Value="32" />
+                    <Setter Property="Margin" Value="10" />
+                    <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality" />
+                </Style>
+            </StackPanel.Resources>
+
+            <Button Click="MediaButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/Images/info.png"/>
+                    <TextBlock VerticalAlignment="Center" Text="Get info" />
+                </StackPanel>
             </Button>
 
-            <Button Style="{StaticResource ControlButtonStyle}" Click="ConvertButton_Click">
-                <TextBlock TextAlignment="Center" FontSize="16">
-                    Select
-                    <LineBreak />
-                    folder
-                </TextBlock>
+            <Button Click="ConvertFileButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/Images/file.png"/>
+                    <TextBlock VerticalAlignment="Center" Text="Select file" />
+                </StackPanel>
             </Button>
 
-            <Button Style="{StaticResource ControlButtonStyle}" Click="MediaButton_Click">
-                <TextBlock TextAlignment="Center" FontSize="16">
-                    Get
-                    <LineBreak />
-                    info
-                </TextBlock>
+            <Button Click="ConvertFolderButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/Images/folder.png"/>
+                    <TextBlock VerticalAlignment="Center" Text="Select folder" />
+                </StackPanel>
             </Button>
         </StackPanel>
 

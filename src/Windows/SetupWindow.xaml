@@ -9,9 +9,9 @@
         Title="Setup"
         WindowStartupLocation="CenterScreen"
         MinHeight="400"
-        Height="450"
-        MinWidth="600"
-        Width="800">
+        Height="600"
+        MinWidth="400"
+        Width="600">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition />
@@ -110,10 +110,12 @@
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
-                    Margin="10">
+                    Margin="10"
+                    Visibility="{Binding CanProcess, Converter={StaticResource BoolToVisibilityConverter}}">
             <CheckBox VerticalAlignment="Center"
                       FontSize="16"
                       IsChecked="{Binding ApplyToAll, Mode=TwoWay}"
+                      Visibility="{Binding MultiSelect, Converter={StaticResource BoolToVisibilityConverter}}"
                       Content="Apply to all" />
             <Button Content="Run"
                     Margin="20,0,0,0"

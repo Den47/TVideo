@@ -7,6 +7,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using TVideo.FF;
 using TVideo.Windows.Classes;
 
@@ -24,7 +25,7 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
-    private void ConvertButton_Click(object sender, RoutedEventArgs e)
+    private void ConvertFileButton_Click(object sender, RoutedEventArgs e)
     {
         var dialogLoad = new OpenFileDialog
         {
@@ -46,6 +47,30 @@ public partial class MainWindow : Window
         Convert(dialogLoad.FileName, hasOutput == true ? dialogSave.FolderName : null);
     }
 
+    private void ConvertFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialogLoad = new OpenFolderDialog
+        {
+            Multiselect = false,
+        };
+
+        var result = dialogLoad.ShowDialog();
+        if (result != true)
+            return;
+
+        var dialogSave = new OpenFolderDialog
+        {
+            Multiselect = false,
+        };
+
+        var hasOutput = dialogSave.ShowDialog();
+
+        foreach (var process in _processes)
+        {
+            //Convert(dialogLoad.FileName, hasOutput == true ? dialogSave.FolderName : null);
+        }
+    }
+
     private void MediaButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
@@ -60,7 +85,7 @@ public partial class MainWindow : Window
 
         var probeResult = GetProbeResult(dialog.FileName);
         if (probeResult != null)
-            ShowSetupDialog(probeResult);
+            ShowSetupDialog(probeResult, canProcess: false);
     }
 
     private static ProcessStartInfo CreateProcessStartInfo(string fileName, string args)
@@ -79,10 +104,12 @@ public partial class MainWindow : Window
         };
     }
 
-    private static Setup? ShowSetupDialog(ProbeResult probeResult)
+    private static Setup? ShowSetupDialog(ProbeResult probeResult, bool canProcess = true, bool multiSelect = false)
     {
         var setup = new Setup
         {
+            CanProcess = canProcess,
+            MultiSelect = multiSelect,
             Contexts =
                 probeResult.Streams
                     .Select(x => new SetupContext { Info = x })
