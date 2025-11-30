@@ -228,22 +228,13 @@ public partial class MainWindow : Window
         if (cancel || setup is null)
             return new ProcessResult(cancel: true);
 
-        var args = new StringBuilder();
-        args.Append($"-i \"{selectedFileName}\" ");
-        args.Append("-map 0:v ");
-        args.Append("-c:v copy ");
-        args.Append(PrepareAudioParameters(setup));
-        //args.Append("-c:a ac3 ");
-        //args.Append("-b:a 640k ");
-        args.Append("-c:s copy ");
-        args.Append($"\"{newFileName}\"");
-
-        var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffmpeg.exe", args.ToString());
-        var result = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
+        var args = Utils.PrepareParams(setup, selectedFileName, newFileName);
+        var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffmpeg.exe", args);
+        var (ExitCode, Output) = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
 
         await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
-            if (result.ExitCode == 0)
+            if (ExitCode == 0)
                 _successful++;
             else
                 _failed++;
@@ -253,37 +244,7 @@ public partial class MainWindow : Window
             ProcessProgressBar.Value = ProcessProgressBar.Maximum;
         }));
 
-        return new ProcessResult(result.ExitCode);
-    }
-
-    private static string PrepareAudioParameters(Setup setup)
-    {
-        var index = 0;
-        var codec = "ac3";
-
-        var convertAudioParams = setup.Items
-            .Where(x => x.IsAudio)
-            .OrderBy(x => x.Info!.Index)
-            .Select(x => (Item: x, Index: index++))
-            .Where(x => !x.Item.Remove)
-            .Select(x =>
-            {
-                if (x.Item.Convert)
-                {
-                    return $"-map 0:a:{x.Index} -c:a:{x.Index} {codec} -b:a:{x.Index} 640k";
-                }
-                else
-                {
-                    return $"-map 0:a:{x.Index} -c:a:{x.Index} copy";
-                }
-            })
-            .ToArray();
-
-        var result = string.Join(' ', convertAudioParams);
-        if (result.Length > 0)
-            return $"{result} ";
-
-        return result;
+        return new ProcessResult(ExitCode);
     }
 
     private void HanleMessage(object sender, DataReceivedEventArgs e)
