@@ -2,10 +2,11 @@
 
 namespace TVideo.Windows.Classes;
 
-public class SetupContext
+public class SetupItem
 {
-    public SetupContext()
+    public SetupItem(ProbeStream? info)
     {
+        Info = info;
         Convert = IsAudio;
     }
 
@@ -15,17 +16,19 @@ public class SetupContext
 
     public bool Remove { get; set; }
 
-    public bool IsAudio => string.Equals(Info?.CodecType, "audio", StringComparison.OrdinalIgnoreCase);
+    public bool IsAudio => string.Equals(CodecType, "audio", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsVideo => string.Equals(Info?.CodecType, "video", StringComparison.OrdinalIgnoreCase);
+    public bool IsVideo => string.Equals(CodecType, "video", StringComparison.OrdinalIgnoreCase);
 
-    public bool IsSubtitle => string.Equals(Info?.CodecType, "subtitle", StringComparison.OrdinalIgnoreCase);
+    public bool IsSubtitle => string.Equals(CodecType, "subtitle", StringComparison.OrdinalIgnoreCase);
 
     public bool CanRemove => !IsVideo;
 
+    private string? CodecType => Info?.CodecType;
+
     public override string ToString()
     {
-        var tags = Info.Tags;
+        var tags = Info?.Tags;
         if (tags is null)
         {
             if (IsVideo)

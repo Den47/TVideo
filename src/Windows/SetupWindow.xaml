@@ -7,6 +7,7 @@
         xmlns:classes="clr-namespace:TVideo.Windows.Classes"
         mc:Ignorable="d"
         Title="Setup"
+        x:Name="SetupDialog"
         WindowStartupLocation="CenterScreen"
         MinHeight="400"
         Height="600"
@@ -18,7 +19,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ListView ItemsSource="{Binding Contexts}"
+        <ListView ItemsSource="{Binding Items}"
                   HorizontalContentAlignment="Stretch"
                   VerticalAlignment="Stretch">
             <ListView.ItemContainerStyle>
@@ -27,7 +28,7 @@
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
-                <DataTemplate DataType="{x:Type classes:SetupContext}">
+                <DataTemplate DataType="{x:Type classes:SetupItem}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -35,8 +36,7 @@
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="50" />
-                            <ColumnDefinition Width="50" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <Rectangle HorizontalAlignment="Left"
@@ -59,7 +59,7 @@
                             <TextBlock Text="{Binding Info.Index}" Margin="8,0,0,0" />
                             <TextBlock Text="{Binding}" Margin="14,0,0,0" />
                         </StackPanel>
-                        
+
                         <StackPanel Grid.Row="1"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Left">
@@ -73,35 +73,33 @@
                             <TextBlock Text="{Binding Info.CodecName}" />
                         </StackPanel>
 
-                        <ToggleButton Grid.Column="1"
-                                      Grid.RowSpan="2"
-                                      Margin="4"
-                                      Padding="2"
-                                      Background="Transparent"
-                                      BorderThickness="1"
-                                      Visibility="{Binding IsAudio, Converter={StaticResource BoolToVisibilityConverter}}"
-                                      IsChecked="{Binding Convert, Mode=TwoWay}">
-                            <TextBlock Text="ac3"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
-                        </ToggleButton>
+                        <StackPanel Grid.Column="1"
+                                    Grid.RowSpan="2"
+                                    Orientation="Horizontal"
+                                    Visibility="{Binding DataContext.CanProcess, ElementName=SetupDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <ToggleButton Margin="4,4,6,4"
+                                          Padding="10"
+                                          Background="Transparent"
+                                          BorderThickness="1"
+                                          Content="convert"
+                                          Visibility="{Binding IsAudio, Converter={StaticResource BoolToVisibilityConverter}}"
+                                          IsChecked="{Binding Convert, Mode=TwoWay}" />
 
-                        <ToggleButton x:Name="RemoveButton"
-                                      Grid.Column="2"
-                                      Grid.RowSpan="2"
-                                      Margin="4"
-                                      Padding="2"
-                                      Background="Transparent"
-                                      BorderThickness="1"
-                                      Visibility="{Binding CanRemove, Converter={StaticResource BoolToVisibilityConverter}}"
-                                      Checked="ToggleButton_Checked"
-                                      Unchecked="ToggleButton_Checked">
-                            <Path Data="M0,0 L16,16 M16,0 L0,16"
-                                  Stroke="Red"
-                                  StrokeThickness="1"
-                                  Width="16"
-                                  Height="16"/>
-                        </ToggleButton>
+                            <ToggleButton x:Name="RemoveButton"
+                                          Margin="4"
+                                          Padding="10"
+                                          Background="Transparent"
+                                          BorderThickness="1"
+                                          Visibility="{Binding CanRemove, Converter={StaticResource BoolToVisibilityConverter}}"
+                                          Checked="ToggleButton_Checked"
+                                          Unchecked="ToggleButton_Checked">
+                                <Path Data="M0,0 L16,16 M16,0 L0,16"
+                                      Stroke="Red"
+                                      StrokeThickness="1"
+                                      Width="16"
+                                      Height="16"/>
+                            </ToggleButton>
+                        </StackPanel>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>

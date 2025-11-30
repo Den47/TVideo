@@ -2,7 +2,7 @@
 
 public class Setup
 {
-    public required IReadOnlyCollection<SetupContext> Contexts { get; init; }
+    public required IReadOnlyCollection<SetupItem> Items { get; init; }
 
     public bool CanProcess { get; init; }
 

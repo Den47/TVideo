@@ -1,5 +1,4 @@
 ﻿using Microsoft.Win32;
-using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -16,10 +15,11 @@ public partial class MainWindow : Window
 {
     private readonly List<Process> _processes = [];
 
-    private bool _applyToAll;
     private int _total;
     private int _successful;
     private int _failed;
+
+    private Setup? _currentSetup = null;
 
     public MainWindow()
     {
@@ -121,10 +121,7 @@ public partial class MainWindow : Window
         {
             CanProcess = canProcess,
             MultiSelect = multiSelect,
-            Contexts =
-                probeResult.Streams
-                    .Select(x => new SetupContext { Info = x })
-                    .ToArray()
+            Items = probeResult.Streams.Select(x => new SetupItem(x)).ToArray()
         };
 
         var setupWindow = new SetupWindow(setup);
@@ -157,8 +154,11 @@ public partial class MainWindow : Window
 
         foreach (var fileName in files)
         {
-            var exitCode = await ConvertFileAsync(fileName, outputDirectory, multiSelect: files.Length > 1);
-            hasResult |= exitCode == 0;
+            var result = await ConvertFileAsync(fileName, outputDirectory, multiSelect: files.Length > 1);
+            if (result.Cancel)
+                break;
+
+            hasResult |= result.ExitCode == 0;
         }
 
         await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
@@ -179,7 +179,7 @@ public partial class MainWindow : Window
         }));
     }
 
-    private async Task<int?> ConvertFileAsync(
+    private async Task<ProcessResult> ConvertFileAsync(
         string selectedFileName,
         string? outputDirectory = null,
         bool multiSelect = false,
@@ -190,16 +190,8 @@ public partial class MainWindow : Window
         var extension = Path.GetExtension(selectedFileName);
         var newFileName = Path.Combine(directory, $"{fileName}_{DateTime.Now:yyyy-MM-dd-HH-mm}{extension}");
 
-        var args = new StringBuilder();
-        args.Append(@$"-i ""{selectedFileName}"" ");
-        args.Append("-map 0 ");
-        args.Append("-c:v copy ");
-        args.Append("-c:a ac3 ");
-        args.Append("-b:a 640k ");
-        args.Append("-c:s copy ");
-        args.Append(@$"""{newFileName}""");
-
         var probeResult = await GetProbeResultAsync(selectedFileName, cancellationToken);
+        var setup = _currentSetup;
         var cancel = false;
 
         await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
@@ -211,9 +203,10 @@ public partial class MainWindow : Window
                 return;
             }
 
-            if (!_applyToAll)
+            if (setup is null)
             {
-                var setup = ShowSetupDialog(probeResult, multiSelect: multiSelect);
+                setup = ShowSetupDialog(probeResult, multiSelect: multiSelect);
+
                 if (setup is null)
                 {
                     ControlPanel.IsEnabled = true;
@@ -221,7 +214,7 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                _applyToAll = setup.ApplyToAll;
+                _currentSetup = setup.ApplyToAll ? setup : null;
             }
 
             ProcessProgressBar.Value = 0;
@@ -232,8 +225,31 @@ public partial class MainWindow : Window
             }
         }));
 
-        if (cancel)
-            return null;
+        if (cancel || setup is null)
+            return new ProcessResult(cancel: true);
+
+        var removeAudio = setup.Items
+            .Where(x => x.IsAudio && x.Remove)
+            .Select(x => $"-map -0:a:{x.Info!.Index}")
+            .ToArray();
+
+        var removeMap = string.Join(' ', removeAudio);
+
+        var convertAudio = setup.Items
+            .Where(x => x.IsAudio && !x.Remove && x.Convert)
+            .Select(x => $"-map 0:a:{x.Info!.Index}")
+            .ToArray();
+
+        var convertMap = string.Join(' ', convertAudio);
+
+        var args = new StringBuilder();
+        args.Append(@$"-i ""{selectedFileName}"" ");
+        args.Append("-map 0 ");
+        args.Append("-c:v copy ");
+        args.Append("-c:a ac3 ");
+        args.Append("-b:a 640k ");
+        args.Append("-c:s copy ");
+        args.Append(@$"""{newFileName}""");
 
         var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffmpeg.exe", args.ToString());
         var result = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
@@ -250,7 +266,7 @@ public partial class MainWindow : Window
             ProcessProgressBar.Value = ProcessProgressBar.Maximum;
         }));
 
-        return result.ExitCode;
+        return new ProcessResult(result.ExitCode);
     }
 
     private void HanleMessage(object sender, DataReceivedEventArgs e)
@@ -353,7 +369,7 @@ public partial class MainWindow : Window
 
     private void Restart(int total)
     {
-        _applyToAll = false;
+        _currentSetup = null;
         _total = total;
         _successful = 0;
         _failed = 0;
@@ -366,7 +382,9 @@ public partial class MainWindow : Window
         var text = $"Completed: {_successful}/{_total}";
 
         if (_failed > 0)
+        {
             text = $"{text}, failed: {_failed}";
+        }
 
         ProgressTextBlock.Text = text;
     }

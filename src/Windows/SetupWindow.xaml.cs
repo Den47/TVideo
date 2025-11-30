@@ -9,18 +9,18 @@ public partial class SetupWindow : Window
     public SetupWindow(Setup setup)
     {
         DataContext = setup;
-        SetupContexts = setup.Contexts;
+        SetupItems = setup.Items;
 
         InitializeComponent();
     }
 
-    public IEnumerable<SetupContext> SetupContexts { get; }
+    public IEnumerable<SetupItem> SetupItems { get; }
 
     private void ToggleButton_Checked(object sender, RoutedEventArgs e)
     {
         var button = (ToggleButton)sender;
-        var setupContext = (SetupContext)button.DataContext;
-        setupContext.Remove = button.IsChecked.GetValueOrDefault();
+        var setupItem = (SetupItem)button.DataContext;
+        setupItem.Remove = button.IsChecked.GetValueOrDefault();
     }
 
     private void RunButton_Click(object sender, RoutedEventArgs e)
