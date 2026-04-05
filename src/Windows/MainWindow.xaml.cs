@@ -11,7 +11,7 @@ using TVideo.Windows.Classes;
 
 namespace TVideo.Windows;
 
-public partial class MainWindow : Window
+public partial class MainWindow
 {
     private readonly List<Process> _processes = [];
 
@@ -19,7 +19,7 @@ public partial class MainWindow : Window
     private int _successful;
     private int _failed;
 
-    private Setup? _currentSetup = null;
+    private Setup? _currentSetup;
 
     public MainWindow()
     {
@@ -46,9 +46,9 @@ public partial class MainWindow : Window
         };
 
         var output = dialogSave.ShowDialog() == true ? dialogSave.FolderName : null;
-        Restart(1);
+        Reset(1);
 
-        _ = StartConvertationAsync([dialogLoad.FileName], output);
+        _ = StartConvertingAsync([dialogLoad.FileName], output);
     }
 
     private void SelectFolderButton_Click(object sender, RoutedEventArgs e)
@@ -59,8 +59,8 @@ public partial class MainWindow : Window
             Multiselect = false,
         };
 
-        var result = dialogLoad.ShowDialog();
-        if (result != true)
+        var resultOpen = dialogLoad.ShowDialog();
+        if (resultOpen != true)
             return;
 
         var files = Directory.GetFiles(dialogLoad.FolderName, "*.mkv");
@@ -76,10 +76,12 @@ public partial class MainWindow : Window
             Multiselect = false,
         };
 
-        var output = dialogSave.ShowDialog() == true ? dialogSave.FolderName : null;
-        Restart(files.Length);
+        var resultSave = dialogSave.ShowDialog();
+        if (resultSave != true)
+            return;
 
-        _ = StartConvertationAsync(files, output);
+        Reset(files.Length);
+        _ = StartConvertingAsync(files, dialogSave.FolderName);
     }
 
     private async void MediaButton_Click(object sender, RoutedEventArgs e)
@@ -121,7 +123,10 @@ public partial class MainWindow : Window
         {
             CanProcess = canProcess,
             MultiSelect = multiSelect,
-            Items = probeResult.Streams.Select(x => new SetupItem(x)).ToArray(),
+            Items = probeResult.Streams
+                .Select(x => new SetupItem(x))
+                .Where(x => x.IsAudio || x.IsSubtitle)
+                .ToArray(),
         };
 
         var setupWindow = new SetupWindow(setup);
@@ -148,7 +153,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task StartConvertationAsync(string[] files, string? outputDirectory)
+    private async Task StartConvertingAsync(string[] files, string? outputDirectory)
     {
         var hasResult = false;
 
@@ -230,11 +235,11 @@ public partial class MainWindow : Window
 
         var args = Utils.PrepareParams(setup, selectedFileName, newFileName);
         var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffmpeg.exe", args);
-        var (ExitCode, Output) = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
+        var (exitCode, _) = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
 
         await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
-            if (ExitCode == 0)
+            if (exitCode == 0)
                 _successful++;
             else
                 _failed++;
@@ -244,10 +249,10 @@ public partial class MainWindow : Window
             ProcessProgressBar.Value = ProcessProgressBar.Maximum;
         }));
 
-        return new ProcessResult(ExitCode);
+        return new ProcessResult(exitCode);
     }
 
-    private void HanleMessage(object sender, DataReceivedEventArgs e)
+    private void HandleMessage(object sender, DataReceivedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(e.Data))
             return;
@@ -255,7 +260,7 @@ public partial class MainWindow : Window
         var message = e.Data;
         var seconds = 0.0;
 
-        var start = message.IndexOf("time=");
+        var start = message.IndexOf("time=", StringComparison.Ordinal);
         if (start != -1)
         {
             start += "time=".Length;
@@ -273,22 +278,23 @@ public partial class MainWindow : Window
         Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
             OutputTextBlock.Text = message;
-            OutputTextBlock.Visibility = message != null ? Visibility.Visible : Visibility.Collapsed;
+            OutputTextBlock.Visibility = Visibility.Visible;
             ProcessProgressBar.Value = seconds > 0 ? seconds : ProcessProgressBar.Value;
         }));
     }
 
-    private async Task<(int ExitCode, string Output)> RunProcessAsync(ProcessStartInfo convertProcessInfo, bool handleOutput = false, CancellationToken cancellationToken = default)
+    private async Task<(int ExitCode, string Output)> RunProcessAsync(
+        ProcessStartInfo convertProcessInfo,
+        bool handleOutput = false,
+        CancellationToken cancellationToken = default)
     {
-        using var process = new Process
-        {
-            StartInfo = convertProcessInfo
-        };
+        using var process = new Process();
+        process.StartInfo = convertProcessInfo;
 
         if (handleOutput)
         {
-            process.OutputDataReceived += HanleMessage;
-            process.ErrorDataReceived += HanleMessage;
+            process.OutputDataReceived += HandleMessage;
+            process.ErrorDataReceived += HandleMessage;
         }
 
         _processes.Add(process);
@@ -307,8 +313,8 @@ public partial class MainWindow : Window
 
         if (handleOutput)
         {
-            process.OutputDataReceived -= HanleMessage;
-            process.ErrorDataReceived -= HanleMessage;
+            process.OutputDataReceived -= HandleMessage;
+            process.ErrorDataReceived -= HandleMessage;
         }
 
         var output = handleOutput ? string.Empty : await process.StandardOutput.ReadToEndAsync(cancellationToken);
@@ -345,7 +351,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Restart(int total)
+    private void Reset(int total)
     {
         _currentSetup = null;
         _total = total;

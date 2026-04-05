@@ -1,9 +1,10 @@
 ﻿<Application x:Class="TVideo.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:TVideo"
+             xmlns:converters="clr-namespace:TVideo.Converters"
              StartupUri="Windows/MainWindow.xaml">
     <Application.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:StrikethroughConverter x:Key="StrikethroughConverter"/>
     </Application.Resources>
 </Application>

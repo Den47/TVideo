@@ -14,45 +14,51 @@
         Closing="Window_Closing">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel x:Name="ControlPanel" Orientation="Horizontal">
+        <StackPanel x:Name="ControlPanel"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top">
             <StackPanel.Resources>
                 <Style TargetType="Button">
-                    <Setter Property="Width" Value="145" />
-                    <Setter Property="Margin" Value="10,10,0,10" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Margin" Value="0" />
                     <Setter Property="FontSize" Value="14" />
                     <Setter Property="HorizontalContentAlignment" Value="Left" />
+                    <Setter Property="BorderThickness" Value="0" />
                 </Style>
                 <Style TargetType="Image">
-                    <Setter Property="Height" Value="32" />
-                    <Setter Property="Width" Value="32" />
+                    <Setter Property="Height" Value="24" />
+                    <Setter Property="Width" Value="24" />
                     <Setter Property="Margin" Value="10" />
                     <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality" />
                 </Style>
             </StackPanel.Resources>
 
             <Button Click="MediaButton_Click">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="/Images/info.png"/>
-                    <TextBlock VerticalAlignment="Center" Text="Get info" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
+                    <Image Source="/Images/info.png"
+                           Width="32"
+                           Height="32" />
+                    <TextBlock VerticalAlignment="Center" Text="Get Info" />
                 </StackPanel>
             </Button>
 
             <Button Click="SelectFileButton_Click">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="/Images/file.png"/>
-                    <TextBlock VerticalAlignment="Center" Text="Convert file" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
+                    <Image Source="/Images/file.png" />
+                    <TextBlock VerticalAlignment="Center" Text="Convert File" />
                 </StackPanel>
             </Button>
 
             <Button Click="SelectFolderButton_Click">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="/Images/folder.png"/>
-                    <TextBlock VerticalAlignment="Center" Text="Convert files" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
+                    <Image Source="/Images/folder.png" />
+                    <TextBlock VerticalAlignment="Center" Text="Convert Files" />
                 </StackPanel>
             </Button>
         </StackPanel>
@@ -62,7 +68,8 @@
                     VerticalAlignment="Bottom">
             <TextBlock x:Name="ProgressTextBlock"
                        Margin="10"
-                       FontSize="16" />
+                       FontSize="16"
+                       Text="Ready!" />
             <TextBlock x:Name="OutputTextBlock"
                        Margin="10,0,10,10"
                        FontSize="12"

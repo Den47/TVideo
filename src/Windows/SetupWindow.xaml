@@ -21,10 +21,15 @@
 
         <ListView ItemsSource="{Binding Items}"
                   HorizontalContentAlignment="Stretch"
-                  VerticalAlignment="Stretch">
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Top"
+                  BorderThickness="0"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  ScrollViewer.VerticalScrollBarVisibility="Hidden">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="Padding" Value="0"/>
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
@@ -32,72 +37,80 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <Rectangle HorizontalAlignment="Left"
-                                   VerticalAlignment="Center"
-                                   Height="2"
-                                   Width="{Binding ActualWidth, ElementName=TitleStackPanel, Mode=OneWay}"
-                                   Fill="Black"
-                                   Margin="8,8,0,0"
-                                   Visibility="{Binding IsChecked, ElementName=RemoveButton, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   Text="{Binding Language}"
+                                   FontSize="18"
+                                   FontWeight="Medium"
+                                   MinWidth="40"
+                                   TextDecorations="None"
+                                   Margin="8,4,8,0"
+                                   VerticalAlignment="Top" />
 
-                        <StackPanel x:Name="TitleStackPanel"
-                                    Orientation="Horizontal"
-                                    HorizontalAlignment="Left">
-                            <StackPanel.Resources>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontSize" Value="18" />
-                                    <Setter Property="FontWeight" Value="Medium" />
-                                </Style>
-                            </StackPanel.Resources>
-                            <TextBlock Text="{Binding Info.Index}" Margin="8,0,0,0" />
-                            <TextBlock Text="{Binding}" Margin="14,0,0,0" />
-                        </StackPanel>
+                        <TextBlock Grid.Row="0"
+                                   Grid.Column="1"
+                                   Text="{Binding}"
+                                   Margin="0,4,8,0"
+                                   FontSize="18"
+                                   FontWeight="Medium"
+                                   TextDecorations="{Binding IsChecked, ElementName=RemoveButton, Converter={StaticResource StrikethroughConverter}}"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Top" />
 
                         <StackPanel Grid.Row="1"
+                                    Grid.Column="1"
                                     Orientation="Horizontal"
-                                    HorizontalAlignment="Left">
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Margin="0,-4,0,4">
                             <StackPanel.Resources>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="FontSize" Value="12" />
-                                    <Setter Property="Margin" Value="8,0,0,4" />
+                                    <Setter Property="FontSize" Value="14" />
+                                    <Setter Property="Margin" Value="0,0,8,0" />
                                 </Style>
                             </StackPanel.Resources>
                             <TextBlock Text="{Binding Info.CodecType}" />
                             <TextBlock Text="{Binding Info.CodecName}" />
                         </StackPanel>
 
-                        <StackPanel Grid.Column="1"
+                        <StackPanel Grid.Row="0"
+                                    Grid.Column="2"
                                     Grid.RowSpan="2"
                                     Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Margin="0"
                                     Visibility="{Binding DataContext.CanProcess, ElementName=SetupDialog, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <ToggleButton Margin="4,4,6,4"
-                                          Padding="10"
+                            <ToggleButton Padding="10,0"
+                                          Margin="0"
                                           Background="Transparent"
                                           BorderThickness="1"
                                           Content="convert"
                                           Visibility="{Binding IsAudio, Converter={StaticResource BoolToVisibilityConverter}}"
                                           IsChecked="{Binding Convert, Mode=TwoWay}" />
-
                             <ToggleButton x:Name="RemoveButton"
-                                          Margin="4"
-                                          Padding="10"
+                                          Padding="6"
+                                          Margin="6,0,6,0"
                                           Background="Transparent"
                                           BorderThickness="1"
+                                          VerticalAlignment="Top"
                                           Visibility="{Binding CanRemove, Converter={StaticResource BoolToVisibilityConverter}}"
                                           Checked="ToggleButton_Checked"
                                           Unchecked="ToggleButton_Checked">
-                                <Path Data="M0,0 L16,16 M16,0 L0,16"
-                                      Stroke="Red"
-                                      StrokeThickness="1"
-                                      Width="16"
-                                      Height="16"/>
+                                <Viewbox Width="14" Height="14">
+                                    <Path Data="M0,0 L16,16 M16,0 L0,16"
+                                          Stroke="Red"
+                                          StrokeThickness="1"
+                                          Width="16"
+                                          Height="16"/>
+                                </Viewbox>
                             </ToggleButton>
                         </StackPanel>
                     </Grid>

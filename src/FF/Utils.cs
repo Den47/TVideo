@@ -38,14 +38,11 @@ internal static class Utils
                     return $"-map -0:a:{x.Index}";
                 }
 
-                if (x.Item.Convert)
-                {
-                    return $"-map 0:a:{x.Index} -c:a:{x.Index} {codec} -b:a:{x.Index} 640k";
-                }
-                else
-                {
-                    return $"-map 0:a:{x.Index} -c:a:{x.Index} copy";
-                }
+                return x.Item.Convert
+                    //? $"-map 0:a:{x.Index} -c:a:{x.Index} {codec} -b:a:{x.Index} 640k"
+                    //? $"-map 0:a:{x.Index} -c:a:{x.Index} ac3 -b:a:{x.Index} 192k -ac 2"
+                    ? $"-map 0:a:{x.Index} -c:a:{x.Index} {codec} -b:a:{x.Index} 384k"
+                    : $"-map 0:a:{x.Index} -c:a:{x.Index} copy";
             });
 
         var result = string.Join(' ', @params);
@@ -67,9 +64,9 @@ internal static class Utils
             .Select(x => $"-map 0:s:{x.Index} -c:s:{x.Index} copy");
 
         var result = string.Join(' ', @params);
-        if (result.Length > 0)
-            return $"{result} ";
-
-        return result;
+        
+        return result.Length > 0
+            ? $"{result} "
+            : result;
     }
 }

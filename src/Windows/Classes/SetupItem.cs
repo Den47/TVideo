@@ -4,13 +4,13 @@ namespace TVideo.Windows.Classes;
 
 public class SetupItem
 {
-    public SetupItem(ProbeStream? info)
+    public SetupItem(ProbeStream info)
     {
         Info = info;
         Convert = IsAudio;
     }
 
-    public ProbeStream? Info { get; init; }
+    public ProbeStream Info { get; }
 
     public bool Convert { get; set; }
 
@@ -24,11 +24,13 @@ public class SetupItem
 
     public bool CanRemove => !IsVideo;
 
-    private string? CodecType => Info?.CodecType;
+    public string Language => Info.Tags?.Language?.Trim().ToUpper() ?? "[Unknown]";
+
+    private string? CodecType => Info.CodecType;
 
     public override string ToString()
     {
-        var tags = Info?.Tags;
+        var tags = Info.Tags;
         if (tags is null)
         {
             if (IsVideo)
@@ -43,9 +45,6 @@ public class SetupItem
             return "[...]";
         }
 
-        var language = string.IsNullOrWhiteSpace(tags.Language) ? "[Unknown]" : tags.Language;
-        var title = string.IsNullOrWhiteSpace(tags.Title) ? "[Untitled]" : tags.Title;
-
-        return $"{language}  {title}";
+        return string.IsNullOrWhiteSpace(tags.Title) ? "[Untitled]" : tags.Title;
     }
 }

@@ -2,9 +2,9 @@
 
 internal record ProcessResult
 {
-    public bool Cancel { get; init; }
+    public bool Cancel { get; }
 
-    public int ExitCode { get; init; }
+    public int ExitCode { get; }
 
     public ProcessResult(int exitCode)
     {
