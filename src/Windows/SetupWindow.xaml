@@ -34,10 +34,10 @@
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate DataType="{x:Type classes:SetupItem}">
-                    <Grid>
+                    <Grid VerticalAlignment="Center">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -70,7 +70,7 @@
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Top"
-                                    Margin="0,-4,0,4">
+                                    Margin="0,-2,0,4">
                             <StackPanel.Resources>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="FontSize" Value="14" />
@@ -104,13 +104,11 @@
                                           Visibility="{Binding CanRemove, Converter={StaticResource BoolToVisibilityConverter}}"
                                           Checked="ToggleButton_Checked"
                                           Unchecked="ToggleButton_Checked">
-                                <Viewbox Width="14" Height="14">
-                                    <Path Data="M0,0 L16,16 M16,0 L0,16"
-                                          Stroke="Red"
-                                          StrokeThickness="1"
-                                          Width="16"
-                                          Height="16"/>
-                                </Viewbox>
+                                <Path Data="M0,0 L16,16 M16,0 L0,16"
+                                      Stroke="Red"
+                                      StrokeThickness="1"
+                                      Width="16"
+                                      Height="16"/>
                             </ToggleButton>
                         </StackPanel>
                     </Grid>

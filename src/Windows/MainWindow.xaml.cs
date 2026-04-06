@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 using System.Windows;
 using TVideo.FF;
@@ -101,22 +100,6 @@ public partial class MainWindow
             ShowSetupDialog(probeResult, canProcess: false);
     }
 
-    private static ProcessStartInfo CreateProcessStartInfo(string fileName, string args)
-    {
-        return new ProcessStartInfo
-        {
-            FileName = fileName,
-            Arguments = args,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8,
-        };
-    }
-
     private static Setup? ShowSetupDialog(ProbeResult probeResult, bool canProcess = true, bool multiSelect = false)
     {
         var setup = new Setup
@@ -137,9 +120,7 @@ public partial class MainWindow
 
     private async Task<ProbeResult?> GetProbeResultAsync(string selectedFileName, CancellationToken cancellationToken = default)
     {
-        var args = @$"-v error -show_entries format=duration:stream=index,codec_type,codec_name,channels:stream_tags=language,title -of json ""{selectedFileName}""";
-
-        var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffprobe.exe", args);
+        var startInfo = Utils.CreateFFProbeStartInfo(selectedFileName);
         var result = await RunProcessAsync(startInfo, handleOutput: false, cancellationToken);
 
         try
@@ -184,7 +165,7 @@ public partial class MainWindow
         }));
     }
 
-    private async Task<ProcessResult> ConvertFileAsync(
+    private async Task<FlowResult> ConvertFileAsync(
         string selectedFileName,
         string? outputDirectory = null,
         bool multiSelect = false,
@@ -231,15 +212,14 @@ public partial class MainWindow
         }));
 
         if (cancel || setup is null)
-            return new ProcessResult(cancel: true);
+            return new FlowResult(cancel: true);
 
-        var args = Utils.PrepareParams(setup, selectedFileName, newFileName);
-        var startInfo = CreateProcessStartInfo($"{Environment.CurrentDirectory}\\FFMPEG\\ffmpeg.exe", args);
-        var (exitCode, _) = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
+        var startInfo = Utils.CreateFFMpegStartInfo(selectedFileName, newFileName, setup);
+        var execResult = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
 
         await Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
-            if (exitCode == 0)
+            if (execResult.ExitCode == 0)
                 _successful++;
             else
                 _failed++;
@@ -249,7 +229,7 @@ public partial class MainWindow
             ProcessProgressBar.Value = ProcessProgressBar.Maximum;
         }));
 
-        return new ProcessResult(exitCode);
+        return new FlowResult(execResult.ExitCode);
     }
 
     private void HandleMessage(object sender, DataReceivedEventArgs e)
@@ -283,7 +263,7 @@ public partial class MainWindow
         }));
     }
 
-    private async Task<(int ExitCode, string Output)> RunProcessAsync(
+    private async Task<ProcessExecutionResult> RunProcessAsync(
         ProcessStartInfo convertProcessInfo,
         bool handleOutput = false,
         CancellationToken cancellationToken = default)
@@ -318,7 +298,7 @@ public partial class MainWindow
         }
 
         var output = handleOutput ? string.Empty : await process.StandardOutput.ReadToEndAsync(cancellationToken);
-        return (process.ExitCode, output);
+        return new ProcessExecutionResult(process.ExitCode, output);
     }
 
     private void Window_Closing(object sender, CancelEventArgs e)

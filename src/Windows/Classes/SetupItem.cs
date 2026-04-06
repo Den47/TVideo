@@ -24,7 +24,9 @@ public class SetupItem
 
     public bool CanRemove => !IsVideo;
 
-    public string Language => Info.Tags?.Language?.Trim().ToUpper() ?? "[Unknown]";
+    public string NewCodec { get; } = "ac3";
+
+    public string Language => Info.Tags?.Language?.Trim().ToUpper() ?? "[??]";
 
     private string? CodecType => Info.CodecType;
 
@@ -45,6 +47,6 @@ public class SetupItem
             return "[...]";
         }
 
-        return string.IsNullOrWhiteSpace(tags.Title) ? "[Untitled]" : tags.Title;
+        return string.IsNullOrWhiteSpace(tags.Title) ? $"Track {Info.Index}" : tags.Title;
     }
 }
