@@ -23,10 +23,11 @@ internal static class Utils
     private static string PrepareParams(string inputFilePath, string outputFilePath, Setup setup)
     {
         var args = new StringBuilder();
-        args.Append($"-i \"{inputFilePath}\" ");
+        args.Append($"-n -i \"{inputFilePath}\" ");
         args.Append(PrepareVideoParameters());
         args.Append(PrepareAudioParameters(setup));
         args.Append(PrepareSubtitleParameters(setup));
+        args.Append("-map 0:t? -c:t copy ");
         args.Append($"\"{outputFilePath}\"");
         return args.ToString();
     }

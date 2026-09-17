@@ -171,11 +171,6 @@ public partial class MainWindow
         bool multiSelect = false,
         CancellationToken cancellationToken = default)
     {
-        var directory = outputDirectory ?? Path.GetDirectoryName(selectedFileName)!;
-        var fileName = Path.GetFileNameWithoutExtension(selectedFileName);
-        var extension = Path.GetExtension(selectedFileName);
-        var newFileName = Path.Combine(directory, $"{fileName}_{DateTime.Now:yyyy-MM-dd-HH-mm}{extension}");
-
         var probeResult = await GetProbeResultAsync(selectedFileName, cancellationToken);
         var setup = _currentSetup;
         var cancel = false;
@@ -220,6 +215,7 @@ public partial class MainWindow
         if (cancel || setup is null)
             return new FlowResult(cancel: true);
 
+        var newFileName = GetOutputFilePath(selectedFileName, outputDirectory);
         var startInfo = Utils.CreateFFMpegStartInfo(selectedFileName, newFileName, setup);
         var execResult = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
 
@@ -236,6 +232,23 @@ public partial class MainWindow
         }));
 
         return new FlowResult(execResult.ExitCode);
+    }
+
+    private static string GetOutputFilePath(string inputFilePath, string? outputDirectory)
+    {
+        var directory = outputDirectory ?? Path.GetDirectoryName(inputFilePath)!;
+        var fileName = Path.GetFileNameWithoutExtension(inputFilePath);
+        var extension = Path.GetExtension(inputFilePath);
+        var outputName = $"{fileName}_{DateTime.Now:yyyy-MM-dd-HH-mm}";
+        var outputPath = Path.Combine(directory, $"{outputName}{extension}");
+        var suffix = 1;
+
+        while (File.Exists(outputPath) || Directory.Exists(outputPath))
+        {
+            outputPath = Path.Combine(directory, $"{outputName}_{suffix++}{extension}");
+        }
+
+        return outputPath;
     }
 
     private void HandleMessage(object sender, DataReceivedEventArgs e)
