@@ -189,6 +189,12 @@ public partial class MainWindow
                 return;
             }
 
+            if (setup is not null && !setup.IsCompatibleWith(probeResult.Streams))
+            {
+                setup = null;
+                _currentSetup = null;
+            }
+
             if (setup is null)
             {
                 setup = ShowSetupDialog(probeResult, multiSelect: multiSelect);

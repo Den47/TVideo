@@ -81,12 +81,12 @@ internal static class Utils
             .OrderBy(x => x.Info.Index)
             .Select(x => (Item: x, Index: index++))
             .Where(x => !x.Item.Remove)
-            .Select(x => $"-map 0:s:{x.Index} -c:s:{x.Index} copy");
+            .Select(x => $"-map 0:s:{x.Index}");
 
         var result = string.Join(' ', @params);
 
         return result.Length > 0
-            ? $"{result} "
+            ? $"{result} -c:s copy "
             : result;
     }
 
