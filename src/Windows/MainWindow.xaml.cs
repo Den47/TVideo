@@ -234,7 +234,7 @@ public partial class MainWindow
         return new FlowResult(execResult.ExitCode);
     }
 
-    private static string GetOutputFilePath(string inputFilePath, string? outputDirectory)
+    internal static string GetOutputFilePath(string inputFilePath, string? outputDirectory)
     {
         var directory = outputDirectory ?? Path.GetDirectoryName(inputFilePath)!;
         var fileName = Path.GetFileNameWithoutExtension(inputFilePath);
