@@ -300,6 +300,13 @@ public partial class MainWindow
 
         process.Start();
 
+        var outputTask = handleOutput
+            ? Task.FromResult(string.Empty)
+            : process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var errorTask = handleOutput
+            ? Task.FromResult(string.Empty)
+            : process.StandardError.ReadToEndAsync(cancellationToken);
+
         if (handleOutput)
         {
             process.BeginOutputReadLine();
@@ -316,7 +323,8 @@ public partial class MainWindow
             process.ErrorDataReceived -= HandleMessage;
         }
 
-        var output = handleOutput ? string.Empty : await process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var output = await outputTask;
+        await errorTask;
         return new ProcessExecutionResult(process.ExitCode, output);
     }
 
