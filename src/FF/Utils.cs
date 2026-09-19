@@ -23,7 +23,7 @@ internal static class Utils
     private static string PrepareParams(string inputFilePath, string outputFilePath, Setup setup)
     {
         var args = new StringBuilder();
-        args.Append($"-n -i \"{inputFilePath}\" ");
+        args.Append($"-n -nostats -progress pipe:1 -stats_period 0.5 -i \"{inputFilePath}\" ");
         args.Append(PrepareVideoParameters());
         args.Append(PrepareAudioParameters(setup));
         args.Append(PrepareSubtitleParameters(setup));

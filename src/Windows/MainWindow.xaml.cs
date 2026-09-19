@@ -19,6 +19,7 @@ public partial class MainWindow
     private int _failed;
 
     private Setup? _currentSetup;
+    private ConversionProgress? _conversionProgress;
 
     public MainWindow()
     {
@@ -152,15 +153,14 @@ public partial class MainWindow
             if (hasResult)
             {
                 UpdateCounts();
-                OutputTextBlock.Text = "All processes finished!";
                 ProcessProgressBar.Value = ProcessProgressBar.Maximum;
             }
             else
             {
                 ProgressTextBlock.Text = string.Empty;
-                OutputTextBlock.Visibility = Visibility.Collapsed;
             }
 
+            OutputPanel.Visibility = Visibility.Collapsed;
             ControlPanel.IsEnabled = true;
         }));
     }
@@ -206,6 +206,12 @@ public partial class MainWindow
 
             ProcessProgressBar.Value = 0;
 
+            _conversionProgress = new ConversionProgress(probeResult.Format?.Duration);
+            CurrentFileTextBlock.Text = $"Current File: {Path.GetFileName(selectedFileName)}";
+            CurrentFileTextBlock.ToolTip = Path.GetFileName(selectedFileName);
+            OutputPanel.Visibility = Visibility.Visible;
+            UpdateProgressDetails();
+
             if (double.TryParse(probeResult.Format?.Duration, NumberStyles.Any, CultureInfo.InvariantCulture, out var duration))
             {
                 ProcessProgressBar.Maximum = duration;
@@ -227,7 +233,9 @@ public partial class MainWindow
                 _failed++;
 
             UpdateCounts();
-            OutputTextBlock.Text = "Process finished!";
+            var outputFile = new FileInfo(newFileName);
+            _conversionProgress?.Finish(execResult.ExitCode == 0, outputFile.Exists ? outputFile.Length : null);
+            UpdateProgressDetails();
             ProcessProgressBar.Value = ProcessProgressBar.Maximum;
         }));
 
@@ -256,30 +264,25 @@ public partial class MainWindow
         if (string.IsNullOrWhiteSpace(e.Data))
             return;
 
-        var message = e.Data;
-        var seconds = 0.0;
-
-        var start = message.IndexOf("time=", StringComparison.Ordinal);
-        if (start != -1)
-        {
-            start += "time=".Length;
-            var end = start;
-
-            while (end < message.Length && !char.IsWhiteSpace(message[end]))
-                end++;
-
-            var timeValue = message.Substring(start, end - start).Trim();
-
-            if (TimeSpan.TryParseExact(timeValue, @"hh\:mm\:ss\.ff", CultureInfo.InvariantCulture, out TimeSpan time))
-                seconds = time.TotalSeconds;
-        }
-
         Application.Current.Dispatcher.BeginInvoke(new Action(() =>
         {
-            OutputTextBlock.Text = message;
-            OutputTextBlock.Visibility = Visibility.Visible;
+            if (_conversionProgress is null || !_conversionProgress.ReadLine(e.Data))
+                return;
+
+            UpdateProgressDetails();
+            var seconds = _conversionProgress.ProcessedSeconds;
             ProcessProgressBar.Value = seconds > 0 ? seconds : ProcessProgressBar.Value;
         }));
+    }
+
+    private void UpdateProgressDetails()
+    {
+        if (_conversionProgress is null)
+            return;
+
+        ProcessedTextBlock.Text = _conversionProgress.ProcessedText;
+        OutputSizeTextBlock.Text = _conversionProgress.OutputSizeText;
+        TimeRemainingTextBlock.Text = _conversionProgress.TimeRemainingText;
     }
 
     private async Task<ProcessExecutionResult> RunProcessAsync(
@@ -293,7 +296,6 @@ public partial class MainWindow
         if (handleOutput)
         {
             process.OutputDataReceived += HandleMessage;
-            process.ErrorDataReceived += HandleMessage;
         }
 
         _processes.Add(process);
@@ -303,14 +305,11 @@ public partial class MainWindow
         var outputTask = handleOutput
             ? Task.FromResult(string.Empty)
             : process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var errorTask = handleOutput
-            ? Task.FromResult(string.Empty)
-            : process.StandardError.ReadToEndAsync(cancellationToken);
+        var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
 
         if (handleOutput)
         {
             process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
         }
 
         await process.WaitForExitAsync(cancellationToken);
@@ -320,7 +319,6 @@ public partial class MainWindow
         if (handleOutput)
         {
             process.OutputDataReceived -= HandleMessage;
-            process.ErrorDataReceived -= HandleMessage;
         }
 
         var output = await outputTask;
@@ -361,6 +359,8 @@ public partial class MainWindow
     private void Reset(int total)
     {
         _currentSetup = null;
+        _conversionProgress = null;
+        OutputPanel.Visibility = Visibility.Collapsed;
         _total = total;
         _successful = 0;
         _failed = 0;

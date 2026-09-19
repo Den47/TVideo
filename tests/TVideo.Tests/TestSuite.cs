@@ -54,6 +54,67 @@ internal sealed class TestSuite(string directory)
 
     private void RegisterLogicTests()
     {
+        Add("Progress calculates size and remaining time with invariant FFmpeg numbers", () =>
+        {
+            var previousCulture = System.Globalization.CultureInfo.CurrentCulture;
+            try
+            {
+                System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("ru-RU");
+                var progress = new ConversionProgress("600.0");
+                progress.ReadLine("out_time_us=120000000");
+                progress.ReadLine("total_size=2400000000");
+                progress.ReadLine("speed= 2.5x");
+                Require(progress.ReadLine("progress=continue"), "Progress report not recognized.");
+                Require(progress.ProcessedText == "Processed: 00:02:00 / 00:10:00", progress.ProcessedText);
+                Require(progress.OutputSizeText == "Output Size: 2400 MB", progress.OutputSizeText);
+                Require(progress.TimeRemainingText == "Time Remaining: ≈ 3 min 12 sec", progress.TimeRemainingText);
+            }
+            finally
+            {
+                System.Globalization.CultureInfo.CurrentCulture = previousCulture;
+            }
+        });
+        Add("Progress handles unavailable values and invalid speed without stale estimates", () =>
+        {
+            var progress = new ConversionProgress("NaN");
+            progress.ReadLine("out_time_us=-1000");
+            progress.ReadLine("total_size=N/A");
+            Require(progress.ProcessedText == "Processed: 00:00:00 / —", progress.ProcessedText);
+            Require(progress.OutputSizeText == "Output Size: —", progress.OutputSizeText);
+            progress = new ConversionProgress("600");
+            progress.ReadLine("out_time_us=1000000");
+            foreach (var speed in new[] { "N/A", "0x", "-2x", "NaNx", "Infinityx" })
+            {
+                progress.ReadLine("speed=2x");
+                progress.ReadLine($"speed={speed}");
+                Require(progress.TimeRemainingText == "Time Remaining: —", progress.TimeRemainingText);
+            }
+        });
+        Add("Progress end does not imply success and final size comes from the file", () =>
+        {
+            var progress = new ConversionProgress("600");
+            progress.ReadLine("out_time_us=120000000");
+            progress.ReadLine("total_size=2400000000");
+            progress.ReadLine("speed=2x");
+            progress.ReadLine("progress=end");
+            Require(progress.TimeRemainingText.Contains("≈"), "End was treated as success.");
+            progress.Finish(false, null);
+            Require(progress.TimeRemainingText == "Time Remaining: —", progress.TimeRemainingText);
+            Require(progress.OutputSizeText == "Output Size: 2400 MB", progress.OutputSizeText);
+            progress.Finish(true, 2401000000);
+            Require(progress.OutputSizeText == "Output Size: 2401 MB", progress.OutputSizeText);
+            Require(progress.TimeRemainingText == "Time Remaining: 0 min 00 sec", progress.TimeRemainingText);
+        });
+        Add("Progress supports long durations and encoder padding", () =>
+        {
+            var progress = new ConversionProgress("90000");
+            progress.ReadLine("out_time_us=90001000000");
+            progress.ReadLine("total_size=1000000");
+            progress.ReadLine("speed=2x");
+            Require(progress.ProcessedText == "Processed: 25:00:01 / 25:00:00", progress.ProcessedText);
+            Require(progress.OutputSizeText == "Output Size: 1 MB", progress.OutputSizeText);
+            Require(progress.TimeRemainingText == "Time Remaining: ≈ 0 min 00 sec", progress.TimeRemainingText);
+        });
         Add("Apply to all accepts identical tracks", () =>
             Require(SavedSetup().IsCompatibleWith(Tracks()), "Identical tracks rejected."));
         Add("Apply to all checks removed tracks too", () =>
@@ -159,6 +220,22 @@ internal sealed class TestSuite(string directory)
 
     private void RegisterMediaTests()
     {
+        _tests.Add(("Bundled FFmpeg reports parseable progress and actual output size", async () =>
+        {
+            var output = Path.Combine(directory, "progress.mkv");
+            var text = await MediaTools.Run(Utils.CreateFFMpegStartInfo(_minimal, output, await MediaTools.ReadSetup(_minimal)));
+            var progress = new ConversionProgress("0.04");
+            var reports = 0;
+            foreach (var line in text.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (progress.ReadLine(line))
+                    reports++;
+            }
+            Require(reports > 0 && text.Contains("progress=end"), "Missing structured progress.");
+            Require(progress.ProcessedSeconds > 0, "Missing processed time.");
+            Require(progress.OutputBytes == new FileInfo(output).Length, "Reported size differs from output file.");
+            Require(!progress.TimeRemainingText.EndsWith("—"), "Missing conversion speed.");
+        }));
         _tests.Add(("Selected audio becomes AC3 while video stays unchanged", async () =>
         {
             var setup = await MediaTools.ReadSetup(_fixture);

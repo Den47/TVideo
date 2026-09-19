@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TVideo"
         mc:Ignorable="d"
-        Title="TVideo"
+        Title="TVideo – FFmpeg GUI"
         WindowStartupLocation="CenterScreen"
         MinHeight="400"
         Height="400"
@@ -31,49 +31,62 @@
                     <Setter Property="HorizontalContentAlignment" Value="Left" />
                     <Setter Property="BorderThickness" Value="0" />
                 </Style>
-                <Style TargetType="Image">
+                <Style x:Key="ButtonGlyph" TargetType="TextBlock">
+                    <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+                    <Setter Property="FontSize" Value="24" />
+                    <Setter Property="Foreground" Value="#30343B" />
                     <Setter Property="Height" Value="24" />
                     <Setter Property="Width" Value="24" />
                     <Setter Property="Margin" Value="10" />
-                    <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality" />
+                    <Setter Property="VerticalAlignment" Value="Center" />
+                    <Setter Property="TextAlignment" Value="Center" />
                 </Style>
             </StackPanel.Resources>
 
             <Button Click="MediaButton_Click">
                 <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
-                    <Image Source="/Images/info.png"
-                           Width="32"
-                           Height="32" />
+                    <TextBlock Style="{StaticResource ButtonGlyph}" Text="&#xE946;" />
                     <TextBlock VerticalAlignment="Center" Text="Get Info" />
                 </StackPanel>
             </Button>
 
             <Button Click="SelectFileButton_Click">
                 <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
-                    <Image Source="/Images/file.png" />
+                    <TextBlock Style="{StaticResource ButtonGlyph}" Text="&#xE8B2;" />
                     <TextBlock VerticalAlignment="Center" Text="Convert File" />
                 </StackPanel>
             </Button>
 
             <Button Click="SelectFolderButton_Click">
                 <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
-                    <Image Source="/Images/folder.png" />
+                    <TextBlock Style="{StaticResource ButtonGlyph}" Text="&#xED25;" />
                     <TextBlock VerticalAlignment="Center" Text="Convert Files" />
                 </StackPanel>
             </Button>
         </StackPanel>
 
         <StackPanel Grid.Row="1"
-                    HorizontalAlignment="Left"
+                    HorizontalAlignment="Stretch"
                     VerticalAlignment="Bottom">
             <TextBlock x:Name="ProgressTextBlock"
                        Margin="10"
                        FontSize="16"
                        Text="Ready!" />
-            <TextBlock x:Name="OutputTextBlock"
-                       Margin="10,0,10,10"
-                       FontSize="12"
-                       Visibility="Collapsed" />
+            <StackPanel x:Name="OutputPanel"
+                        Margin="10,0,10,10"
+                        Visibility="Collapsed">
+                <StackPanel.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="FontSize" Value="12" />
+                        <Setter Property="Margin" Value="0,0,0,4" />
+                    </Style>
+                </StackPanel.Resources>
+                <TextBlock x:Name="CurrentFileTextBlock" Text="Current File: —"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="ProcessedTextBlock" Text="Processed: — / —" />
+                <TextBlock x:Name="OutputSizeTextBlock" Text="Output Size: —" />
+                <TextBlock x:Name="TimeRemainingTextBlock" Text="Time Remaining: —" />
+            </StackPanel>
         </StackPanel>
 
         <ProgressBar x:Name="ProcessProgressBar"

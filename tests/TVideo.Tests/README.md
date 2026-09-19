@@ -18,6 +18,7 @@ The runner prints each result and returns exit code 1 if any test, fixture creat
 
 ## Coverage
 
+- Structured FFmpeg progress, processed duration, output size, remaining time estimates, unavailable values, culture independence, and final file size.
 - Track compatibility: matching tracks, removed tracks, added/missing audio and subtitles, reordered languages, changed codecs/channels/languages/titles, missing tags, normalized metadata, and absolute stream index shifts.
 - Available output names, numbered suffixes, occupied files/directories, and the default destination.
 - Actual AC3 conversion and mixed copying/conversion after removing an audio track.

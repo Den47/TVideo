@@ -10,20 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Images\file.png" />
-    <None Remove="Images\folder.png" />
-    <None Remove="Images\info.png" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="ico.ico" />
     <InternalsVisibleTo Include="TVideo.Tests" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="Images\file.png" />
-    <Resource Include="Images\folder.png" />
-    <Resource Include="Images\info.png" />
   </ItemGroup>
 
   <ItemGroup>
