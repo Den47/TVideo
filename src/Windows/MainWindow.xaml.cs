@@ -39,40 +39,60 @@ public partial class MainWindow
         if (result != true)
             return;
 
-        var dialogSave = new OpenFolderDialog
-        {
-            Title = "Select a folder to save",
-            Multiselect = false,
-        };
-
-        var output = dialogSave.ShowDialog() == true ? dialogSave.FolderName : null;
-        Reset(1);
-
-        _ = StartConvertingAsync([dialogLoad.FileName], output);
+        SelectOutputAndConvert([dialogLoad.FileName]);
     }
 
-    private void SelectFolderButton_Click(object sender, RoutedEventArgs e)
+    private void SelectFilesButton_Click(object sender, RoutedEventArgs e)
     {
-        var dialogLoad = new OpenFolderDialog
+        var dialogLoad = new OpenFileDialog
         {
-            Title = "Select the folder with *.mkv files to convert",
-            Multiselect = false,
+            Title = "Select the files to convert",
+            Filter = "MKV (*.mkv)|*.mkv",
+            Multiselect = true,
         };
 
         var resultOpen = dialogLoad.ShowDialog();
         if (resultOpen != true)
             return;
 
-        var files = Directory.GetFiles(dialogLoad.FolderName, "*.mkv");
-        if (files.Length == 0)
-        {
-            MessageBox.Show("No *.mkv files found!");
-            return;
-        }
+        SelectOutputAndConvert(dialogLoad.FileNames);
+    }
 
+    private void FileDropArea_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = GetDroppedFiles(e) is not null ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void FileDropArea_Drop(object sender, DragEventArgs e)
+    {
+        var files = GetDroppedFiles(e);
+        e.Effects = files is not null ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+
+        if (files is not null)
+            SelectOutputAndConvert(files);
+    }
+
+    private string[]? GetDroppedFiles(DragEventArgs e)
+    {
+        if (!ControlPanel.IsEnabled || !e.AllowedEffects.HasFlag(DragDropEffects.Copy) ||
+            !e.Data.GetDataPresent(DataFormats.FileDrop) ||
+            e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } files)
+            return null;
+
+        return files.All(file => File.Exists(file) &&
+            string.Equals(Path.GetExtension(file), ".mkv", StringComparison.OrdinalIgnoreCase))
+            ? files
+            : null;
+    }
+
+    private void SelectOutputAndConvert(string[] files)
+    {
         var dialogSave = new OpenFolderDialog
         {
             Title = "Select a folder to save",
+            InitialDirectory = Path.GetDirectoryName(files[0])!,
             Multiselect = false,
         };
 
@@ -137,11 +157,12 @@ public partial class MainWindow
 
     private async Task StartConvertingAsync(string[] files, string? outputDirectory)
     {
+        var addTimestamp = HasOutputNameCollisions(files, outputDirectory);
         var hasResult = false;
 
         foreach (var fileName in files)
         {
-            var result = await ConvertFileAsync(fileName, outputDirectory, multiSelect: files.Length > 1);
+            var result = await ConvertFileAsync(fileName, outputDirectory, addTimestamp, multiSelect: files.Length > 1);
             if (result.Cancel)
                 break;
 
@@ -168,6 +189,7 @@ public partial class MainWindow
     private async Task<FlowResult> ConvertFileAsync(
         string selectedFileName,
         string? outputDirectory = null,
+        bool addTimestamp = false,
         bool multiSelect = false,
         CancellationToken cancellationToken = default)
     {
@@ -221,7 +243,7 @@ public partial class MainWindow
         if (cancel || setup is null)
             return new FlowResult(cancel: true);
 
-        var newFileName = GetOutputFilePath(selectedFileName, outputDirectory);
+        var newFileName = GetOutputFilePath(selectedFileName, outputDirectory, addTimestamp);
         var startInfo = Utils.CreateFFMpegStartInfo(selectedFileName, newFileName, setup);
         var execResult = await RunProcessAsync(startInfo, handleOutput: true, cancellationToken);
 
@@ -242,9 +264,19 @@ public partial class MainWindow
         return new FlowResult(execResult.ExitCode);
     }
 
-    internal static string GetOutputFilePath(string inputFilePath, string? outputDirectory)
+    internal static bool HasOutputNameCollisions(string[] files, string? outputDirectory)
+    {
+        return files.Any(file => Path.Exists(Path.Combine(
+            outputDirectory ?? Path.GetDirectoryName(file)!, Path.GetFileName(file))));
+    }
+
+    internal static string GetOutputFilePath(string inputFilePath, string? outputDirectory, bool addTimestamp = false)
     {
         var directory = outputDirectory ?? Path.GetDirectoryName(inputFilePath)!;
+        var originalPath = Path.Combine(directory, Path.GetFileName(inputFilePath));
+        if (!addTimestamp && !Path.Exists(originalPath))
+            return originalPath;
+
         var fileName = Path.GetFileNameWithoutExtension(inputFilePath);
         var extension = Path.GetExtension(inputFilePath);
         var outputName = $"{fileName}_{DateTime.Now:yyyy-MM-dd-HH-mm}";

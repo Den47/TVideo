@@ -180,6 +180,44 @@ internal sealed class TestSuite(string directory)
             });
         }
 
+        Add("Output names stay unchanged when the destination has no collisions", () =>
+        {
+            var folder = Path.Combine(directory, "unchanged-names");
+            Directory.CreateDirectory(folder);
+            string[] inputs = [Path.Combine(directory, "first.mkv"), Path.Combine(directory, "second.mkv")];
+            Require(!MainWindow.HasOutputNameCollisions(inputs, folder), "Unexpected batch collision.");
+            foreach (var input in inputs)
+                Require(MainWindow.GetOutputFilePath(input, folder) == Path.Combine(folder, Path.GetFileName(input)),
+                    "Unoccupied original name changed.");
+        });
+        Add("One destination collision timestamps the entire batch", () =>
+        {
+            var folder = Path.Combine(directory, "batch-names");
+            Directory.CreateDirectory(folder);
+            string[] inputs = [Path.Combine(directory, "first.mkv"), Path.Combine(directory, "second.mkv")];
+            File.WriteAllText(Path.Combine(folder, "second.mkv"), "Keep");
+            var addTimestamp = MainWindow.HasOutputNameCollisions(inputs, folder);
+            Require(addTimestamp, "Collision in the last file was missed.");
+            foreach (var input in inputs)
+            {
+                var output = MainWindow.GetOutputFilePath(input, folder, addTimestamp);
+                var stem = Path.GetFileNameWithoutExtension(input);
+                Require(Path.GetFileNameWithoutExtension(output).StartsWith(stem + "_", StringComparison.Ordinal),
+                    "Batch member has no timestamp.");
+                Require(DateTime.TryParseExact(Path.GetFileNameWithoutExtension(output)[(stem.Length + 1)..],
+                    "yyyy-MM-dd-HH-mm", null, System.Globalization.DateTimeStyles.None, out _), "Invalid timestamp.");
+            }
+            Require(File.ReadAllText(Path.Combine(folder, "second.mkv")) == "Keep", "Existing file changed.");
+        });
+        Add("Single file in its source directory gets a timestamp", () =>
+        {
+            var folder = Path.Combine(directory, "same-folder");
+            Directory.CreateDirectory(folder);
+            var input = Path.Combine(folder, "source.mkv");
+            File.WriteAllText(input, "Keep");
+            Require(MainWindow.HasOutputNameCollisions([input], null), "Source file collision missed.");
+            Require(MainWindow.GetOutputFilePath(input, null) != input, "Input path reused as output.");
+        });
         Add("Output name skips existing files and directories", () =>
         {
             var folder = Path.Combine(directory, "names");
@@ -187,6 +225,7 @@ internal sealed class TestSuite(string directory)
             var input = Path.Combine(folder, "source.mkv");
             var first = MainWindow.GetOutputFilePath(input, folder);
             Require(!File.Exists(first) && Path.GetExtension(first) == ".mkv", "Invalid initial name.");
+            File.WriteAllText(input, "Keep");
             var now = DateTime.Now;
             for (var minute = -1; minute <= 1; minute++)
             {

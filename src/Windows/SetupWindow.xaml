@@ -92,10 +92,12 @@
                                           Margin="0"
                                           Background="Transparent"
                                           BorderThickness="1"
-                                          Content="convert"
+                                          Content="AC-3"
+                                          ToolTip="Convert to AC-3"
                                           Visibility="{Binding IsAudio, Converter={StaticResource BoolToVisibilityConverter}}"
                                           IsChecked="{Binding Convert, Mode=TwoWay}" />
                             <ToggleButton x:Name="RemoveButton"
+                                          ToolTip="Remove"
                                           Padding="6"
                                           Margin="6,0,6,0"
                                           Background="Transparent"

@@ -12,8 +12,12 @@
         MinWidth="600"
         Width="600"
         Closing="Window_Closing">
-    <Grid>
+    <Grid Background="Transparent"
+          AllowDrop="{Binding IsEnabled, ElementName=ControlPanel}"
+          PreviewDragOver="FileDropArea_DragOver"
+          PreviewDrop="FileDropArea_Drop">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -21,7 +25,7 @@
 
         <StackPanel x:Name="ControlPanel"
                     Orientation="Horizontal"
-                    HorizontalAlignment="Left"
+                    HorizontalAlignment="Center"
                     VerticalAlignment="Top">
             <StackPanel.Resources>
                 <Style TargetType="Button">
@@ -43,13 +47,6 @@
                 </Style>
             </StackPanel.Resources>
 
-            <Button Click="MediaButton_Click">
-                <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
-                    <TextBlock Style="{StaticResource ButtonGlyph}" Text="&#xE946;" />
-                    <TextBlock VerticalAlignment="Center" Text="Get Info" />
-                </StackPanel>
-            </Button>
-
             <Button Click="SelectFileButton_Click">
                 <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
                     <TextBlock Style="{StaticResource ButtonGlyph}" Text="&#xE8B2;" />
@@ -57,15 +54,38 @@
                 </StackPanel>
             </Button>
 
-            <Button Click="SelectFolderButton_Click">
+            <Button Click="SelectFilesButton_Click">
                 <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
                     <TextBlock Style="{StaticResource ButtonGlyph}" Text="&#xED25;" />
                     <TextBlock VerticalAlignment="Center" Text="Convert Files" />
                 </StackPanel>
             </Button>
+
+            <Button Click="MediaButton_Click">
+                <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
+                    <TextBlock Style="{StaticResource ButtonGlyph}" Text="&#xE946;" />
+                    <TextBlock VerticalAlignment="Center" Text="Get Info" />
+                </StackPanel>
+            </Button>
         </StackPanel>
 
         <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+            <TextBlock Text="&#xE8C8;"
+                       FontFamily="Segoe MDL2 Assets"
+                       FontSize="24"
+                       Foreground="#707780"
+                       Margin="0,0,10,0"
+                       VerticalAlignment="Center" />
+            <TextBlock Text="Drop one or more MKV files here"
+                       VerticalAlignment="Center"
+                       Foreground="#707780"
+                       FontSize="16" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Bottom">
             <TextBlock x:Name="ProgressTextBlock"
@@ -90,7 +110,7 @@
         </StackPanel>
 
         <ProgressBar x:Name="ProcessProgressBar"
-                     Grid.Row="2"
+                     Grid.Row="3"
                      Height="32"
                      HorizontalAlignment="Stretch" />
     </Grid>
